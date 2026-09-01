@@ -6,6 +6,7 @@ import { Amount, Banner, Button, Logo } from '../components/ui.tsx'
 import { useWallet } from '../context/WalletContext.tsx'
 import { fetchDemo, fetchMyGroups } from '../lib/api.ts'
 import { isAppError, toErrorMessage } from '../lib/errors.ts'
+import { isPreview } from '../lib/preview.ts'
 
 function sumCurrency(items: { currency: Currency; amountMinor: string }[], currency: Currency): bigint {
   return items
@@ -27,9 +28,7 @@ export function Home() {
       try {
         const [demoResult, myGroups] = await Promise.all([
           fetchDemo(wallet.nimiqAddress, wallet.ethAddress),
-          wallet.nimiqAddress || wallet.ethAddress
-            ? fetchMyGroups(wallet.nimiqAddress, wallet.ethAddress)
-            : Promise.resolve([] as GroupSummary[]),
+          fetchMyGroups(wallet.nimiqAddress, wallet.ethAddress),
         ])
         if (cancelled) return
         setDemo(demoResult.demo)
@@ -38,12 +37,14 @@ export function Home() {
         setError(null)
       } catch (err) {
         if (cancelled) return
-        setOffline(isAppError(err) && err.code === 'backend_unavailable')
+        setOffline(isAppError(err) && err.code === 'backend_unavailable' && !isPreview())
         setError(toErrorMessage(err))
       }
     }
     void load()
-    const timer = window.setInterval(() => void load(), 8000)
+    const timer = window.setInterval(() => {
+      if (!isPreview()) void load()
+    }, 8000)
     return () => {
       cancelled = true
       window.clearInterval(timer)
@@ -59,7 +60,7 @@ export function Home() {
   }, [groups])
 
   const primaryOwe = totals.oweNim > 0n || totals.oweUsdt === 0n
-  const canAct = wallet.status === 'connected'
+  const canAct = wallet.status === 'connected' || isPreview()
 
   return (
     <div className="screen flex flex-col">
@@ -79,7 +80,12 @@ export function Home() {
       {wallet.status === 'connecting' && (
         <Banner tone="muted">Connecting wallet…</Banner>
       )}
-      {wallet.status === 'unavailable' && (
+      {isPreview() && (
+        <Banner tone="muted">
+          UI preview with Friday Dinner. Real NIM payments need Nimiq Pay.
+        </Banner>
+      )}
+      {wallet.status === 'unavailable' && !isPreview() && (
         <Banner
           tone="warn"
           action={

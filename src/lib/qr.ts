@@ -1,7 +1,10 @@
 import QRCode from 'qrcode'
 
 export function inviteUrl(code: string): string {
-  const origin = (import.meta.env.VITE_APP_URL || window.location.origin).replace(/\/$/, '')
+  const origin = (
+    import.meta.env.VITE_APP_URL ||
+    `${window.location.origin}${import.meta.env.BASE_URL}`
+  ).replace(/\/$/, '')
   return `${origin}/join/${code}`
 }
 

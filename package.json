@@ -18,6 +18,7 @@
     "dev:web": "vite",
     "dev:api": "wrangler dev --port 8787",
     "build": "tsc -b && vite build",
+    "build:pages": "tsc -b && GITHUB_PAGES=1 vite build",
     "preview": "vite preview --host",
     "lint": "oxlint",
     "deploy": "npm run build && wrangler deploy",

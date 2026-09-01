@@ -18,10 +18,12 @@ function HomeOrJoin() {
   return <Home />
 }
 
+const basename = import.meta.env.BASE_URL.replace(/\/$/, '') || undefined
+
 export default function App() {
   return (
     <WalletProvider>
-      <BrowserRouter>
+      <BrowserRouter basename={basename}>
         <Routes>
           <Route element={<Shell />}>
             <Route path="/" element={<HomeOrJoin />} />

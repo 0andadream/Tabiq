@@ -1,5 +1,11 @@
 import type { Currency, DemoInfo, Group, GroupSummary, Network, Payment, PaymentStatus } from '@shared/types.ts'
-import { AppError } from './errors.ts'
+import { AppError, isAppError } from './errors.ts'
+import {
+  getPreviewDemo,
+  getPreviewGroup,
+  getPreviewSummaries,
+  PREVIEW_GROUP_ID,
+} from './preview.ts'
 import { cacheGroup, cacheGroups, loadCachedGroup } from './storage.ts'
 
 const API_BASE = (import.meta.env.VITE_API_URL ?? '').replace(/\/$/, '')
@@ -59,14 +65,23 @@ export async function fetchHealth(): Promise<boolean> {
   }
 }
 
+function isUnavailable(error: unknown): boolean {
+  return isAppError(error) && error.code === 'backend_unavailable'
+}
+
 export async function fetchDemo(nimiq?: string | null, eth?: string | null): Promise<{ demo: DemoInfo; group: Group }> {
   const params = new URLSearchParams()
   if (nimiq) params.set('nimiq', nimiq)
   if (eth) params.set('eth', eth)
   const suffix = params.size ? `?${params}` : ''
-  const result = await request<{ demo: DemoInfo; group: Group }>(`/api/demo${suffix}`)
-  cacheGroup(result.group)
-  return result
+  try {
+    const result = await request<{ demo: DemoInfo; group: Group }>(`/api/demo${suffix}`)
+    cacheGroup(result.group)
+    return result
+  } catch (error) {
+    if (isUnavailable(error)) return getPreviewDemo()
+    throw error
+  }
 }
 
 export async function fetchMyGroups(nimiq?: string | null, eth?: string | null): Promise<GroupSummary[]> {
@@ -74,8 +89,13 @@ export async function fetchMyGroups(nimiq?: string | null, eth?: string | null):
   if (nimiq) params.set('nimiq', nimiq)
   if (eth) params.set('eth', eth)
   const suffix = params.size ? `?${params}` : ''
-  const result = await request<{ groups: GroupSummary[] }>(`/api/groups${suffix}`)
-  return result.groups
+  try {
+    const result = await request<{ groups: GroupSummary[] }>(`/api/groups${suffix}`)
+    return result.groups
+  } catch (error) {
+    if (isUnavailable(error)) return getPreviewSummaries()
+    throw error
+  }
 }
 
 export async function fetchGroup(id: string): Promise<Group> {
@@ -85,6 +105,10 @@ export async function fetchGroup(id: string): Promise<Group> {
     cacheGroups([result.group])
     return result.group
   } catch (error) {
+    if (id === PREVIEW_GROUP_ID || isUnavailable(error)) {
+      const preview = getPreviewDemo().group
+      if (id === preview.id || id === PREVIEW_GROUP_ID) return preview
+    }
     const cached = loadCachedGroup(id)
     if (cached) return cached
     throw error
@@ -92,10 +116,18 @@ export async function fetchGroup(id: string): Promise<Group> {
 }
 
 export async function lookupCode(code: string): Promise<{ id: string; code: string; name: string; memberCount: number }> {
-  const result = await request<{ group: { id: string; code: string; name: string; memberCount: number } }>(
-    `/api/groups/code/${encodeURIComponent(code.trim().toUpperCase())}`,
-  )
-  return result.group
+  try {
+    const result = await request<{ group: { id: string; code: string; name: string; memberCount: number } }>(
+      `/api/groups/code/${encodeURIComponent(code.trim().toUpperCase())}`,
+    )
+    return result.group
+  } catch (error) {
+    if (isUnavailable(error) && code.trim().toUpperCase() === 'FRIDAY') {
+      const group = getPreviewDemo().group
+      return { id: group.id, code: group.code, name: group.name, memberCount: group.members.length }
+    }
+    throw error
+  }
 }
 
 export async function createGroup(input: {
@@ -118,16 +150,23 @@ export async function joinGroup(input: {
   nimiqAddress?: string | null
   ethAddress?: string | null
 }): Promise<Group> {
-  const result = await request<{ group: Group }>(`/api/groups/code/${encodeURIComponent(input.code.trim().toUpperCase())}/join`, {
-    method: 'POST',
-    body: JSON.stringify({
-      displayName: input.displayName,
-      nimiqAddress: input.nimiqAddress,
-      ethAddress: input.ethAddress,
-    }),
-  })
-  cacheGroup(result.group)
-  return result.group
+  try {
+    const result = await request<{ group: Group }>(`/api/groups/code/${encodeURIComponent(input.code.trim().toUpperCase())}/join`, {
+      method: 'POST',
+      body: JSON.stringify({
+        displayName: input.displayName,
+        nimiqAddress: input.nimiqAddress,
+        ethAddress: input.ethAddress,
+      }),
+    })
+    cacheGroup(result.group)
+    return result.group
+  } catch (error) {
+    if (isUnavailable(error) && input.code.trim().toUpperCase() === 'FRIDAY') {
+      return getPreviewGroup()
+    }
+    throw error
+  }
 }
 
 export async function addExpense(groupId: string, input: {

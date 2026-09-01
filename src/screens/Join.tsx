@@ -48,7 +48,7 @@ export function Join() {
   }, [code])
 
   async function onJoin() {
-    if (wallet.status !== 'connected') {
+    if (wallet.status !== 'connected' && code.trim().toUpperCase() !== 'FRIDAY') {
       setError('Connect a wallet in Nimiq Pay before joining.')
       return
     }
@@ -84,7 +84,7 @@ export function Join() {
       {wallet.status !== 'connected' && (
         <div className="mb-5">
           <Banner tone="warn">
-            Wallet not connected. Open Tabiq inside Nimiq Pay, then join.
+            Wallet not connected. You can still open the Friday Dinner preview; live joins need Nimiq Pay.
           </Banner>
         </div>
       )}
