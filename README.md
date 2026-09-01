@@ -1,18 +1,18 @@
-# Tabiq
+# Nimsplit
 
 **Split the bill. Settle in NIM.**
 
-Tabiq is an instant group expense splitter that runs as a [Nimiq Pay Mini App](https://nimiq.dev/mini-apps/). Friends create or join a group, add a bill, split it equally or with custom amounts, and settle their share in one tap with **NIM** or **USDT on Polygon**.
+Nimsplit is an instant group expense splitter that runs as a [Nimiq Pay Mini App](https://nimiq.dev/mini-apps/). Friends create or join a group, add a bill, split it equally or with custom amounts, and settle their share in one tap with **NIM** or **USDT on Polygon**.
 
-Payments are the product. Tabiq does not custody funds, does not ask for private keys, and does not mark a bill as paid unless the wallet provider actually submitted a transaction.
+Payments are the product. Nimsplit does not custody funds, does not ask for private keys, and does not mark a bill as paid unless the wallet provider actually submitted a transaction.
 
 ## Why it exists
 
-Splitting a dinner is easy. Getting paid is not. IOUs linger in chats, bank transfers take days, and crypto payments are usually a separate, clumsy flow. Tabiq keeps the whole path inside Nimiq Pay: see the share, tap Pay, approve in the native wallet, done.
+Splitting a dinner is easy. Getting paid is not. IOUs linger in chats, bank transfers take days, and crypto payments are usually a separate, clumsy flow. Nimsplit keeps the whole path inside Nimiq Pay: see the share, tap Pay, approve in the native wallet, done.
 
 ## Core user flow
 
-1. Open Tabiq inside Nimiq Pay.
+1. Open Nimsplit inside Nimiq Pay.
 2. Connect the wallet (usually under 10 seconds).
 3. Create a group, or join with a short code / QR.
 4. Add an expense: title, amount, currency, payer, participants.
@@ -20,16 +20,16 @@ Splitting a dinner is easy. Getting paid is not. IOUs linger in chats, bank tran
 6. Each person sees exactly what they owe.
 7. Tap **Pay**.
 8. Approve the native wallet confirmation.
-9. Tabiq records the payment only after the provider returns a transaction id.
+9. Nimsplit records the payment only after the provider returns a transaction id.
 10. Balances and activity update. The share shows **Settled ✓**.
 
-If the user rejects the payment, the network fails, the hash is missing, or the transaction stays pending, Tabiq does **not** mark it as paid. Retry is available when it is safe.
+If the user rejects the payment, the network fails, the hash is missing, or the transaction stays pending, Nimsplit does **not** mark it as paid. Retry is available when it is safe.
 
 ## Architecture
 
 ```
 Nimiq Pay WebView
-  └── Tabiq (Vite + React + TypeScript)
+  └── Nimsplit (Vite + React + TypeScript)
         ├── @nimiq/mini-app-sdk  → NIM accounts & NIM transfers
         ├── window.ethereum      → USDT on Polygon (EIP-1193)
         └── Cloudflare Worker + D1
@@ -126,7 +126,7 @@ Mini App testing currently requires Nimiq Pay allowlist access. See the [officia
 1. Run `npm run dev`.
 2. Note the LAN URL printed by Vite, for example `http://192.168.1.20:5173`.
 3. In Nimiq Pay, open Mini Apps and enter that URL.
-4. Tabiq waits for the injected Nimiq provider via `init()` from `@nimiq/mini-app-sdk`.
+4. Nimsplit waits for the injected Nimiq provider via `init()` from `@nimiq/mini-app-sdk`.
 5. Connect, join **Friday Dinner**, and send a real NIM payment.
 
 Deeplink formats (after you publish an HTTPS origin):
@@ -151,14 +151,14 @@ const accounts = await nimiq.listAccounts()
 const result = await nimiq.sendBasicTransactionWithData({
   recipient,          // NQ-… address
   value: luna,        // integer luna; 1 NIM = 100_000 luna
-  data: 'Tabiq …',    // optional memo, max 64 bytes
+  data: 'Nimsplit …',    // optional memo, max 64 bytes
 })
 ```
 
 - `sendBasicTransaction` / `sendBasicTransactionWithData` open native confirmation in Nimiq Pay.
 - Values are **luna**, not NIM.
 - The methods return a `string` (serialized tx / hash) or `{ error: { type, message } }`.
-- Tabiq stores the returned string as `txHash` only when it is a non-empty success value.
+- Nimsplit stores the returned string as `txHash` only when it is a non-empty success value.
 - User rejection, missing tx id, or provider errors leave the payment **unpaid**.
 
 The SDK does not expose `getBalance`. Insufficient NIM balance is reported from the wallet error after the user tries to send.
@@ -173,7 +173,7 @@ USDT is sent on **Polygon** through the injected EIP-1193 provider (`window.ethe
 - The payment is recorded only if `eth_sendTransaction` returns a `0x` transaction hash
 - Receipt `status === 0x0` is treated as a failed payment, not settled
 
-Tabiq never builds raw signed transactions and never asks for private keys.
+Nimsplit never builds raw signed transactions and never asks for private keys.
 
 ## Network requirements
 
@@ -193,7 +193,7 @@ A group is identified by a short code (for example `FRIDAY`). Anyone with the co
 - recording payment attempts and submitted hashes
 - computing who owes whom from expenses minus settled payments
 
-Clients may cache the last snapshot for resilience. If the backend is down, Tabiq says so and does not pretend a payment settled.
+Clients may cache the last snapshot for resilience. If the backend is down, Nimsplit says so and does not pretend a payment settled.
 
 ## How to run the demo
 
@@ -209,19 +209,19 @@ The Worker seeds **Friday Dinner** on first request.
 
 Judge path:
 
-1. Open Tabiq in Nimiq Pay.
+1. Open Nimsplit in Nimiq Pay.
 2. Tap **Join Friday Dinner** (or enter `FRIDAY`).
 3. See the 40 NIM dinner and a 10 NIM share.
 4. Tap **Pay** / **Pay your share**.
 5. Approve the real NIM transaction in Nimiq Pay.
-6. Return to Tabiq and see **Settled ✓** plus the transaction id / explorer link when the provider returns one.
+6. Return to Nimsplit and see **Settled ✓** plus the transaction id / explorer link when the provider returns one.
 
 Demo recipient addresses for Alex, Sarah, and David are deterministic Nimiq / Polygon addresses derived from labels. They are real on-chain destinations, not simulated balances. Do not send large amounts to the demo group.
 
 ## Known limitations
 
 - NIM preflight balance checks are not possible with the current Mini App SDK (no `getBalance`).
-- Tabiq treats a successful provider submission (tx id / hash) as settled. It does not wait for deep Nimiq confirmations.
+- Nimsplit treats a successful provider submission (tx id / hash) as settled. It does not wait for deep Nimiq confirmations.
 - USDT is Polygon only.
 - Paying a demo member sends real tokens to that demo address.
 - Mini App provider methods only work inside Nimiq Pay (or a compatible host).

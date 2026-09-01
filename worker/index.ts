@@ -379,7 +379,7 @@ app.use('/api/*', async (c, next) => {
   await next()
 })
 
-app.get('/api/health', (c) => c.json({ ok: true, name: 'Tabiq' }))
+app.get('/api/health', (c) => c.json({ ok: true, name: 'Nimsplit' }))
 
 app.get('/api/demo', async (c) => {
   const nimiq = c.req.query('nimiq') ? normalizeNimiqAddress(c.req.query('nimiq') ?? '') : null

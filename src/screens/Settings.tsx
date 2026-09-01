@@ -27,7 +27,7 @@ export function Settings() {
 
   return (
     <div className="screen">
-      <ScreenHeader title="Settings" back={<BackButton onClick={() => nav('/')} />} />
+      <ScreenHeader title="Settings" back={<BackButton onClick={() => nav('/app')} />} />
 
       <Logo />
       <p className="mt-3 text-[14px] text-muted">Split the bill. Settle in NIM.</p>
@@ -83,9 +83,9 @@ export function Settings() {
         </section>
 
         <section className="text-[13px] text-muted leading-relaxed space-y-3">
-          <p>Tabiq never asks for private keys and never holds your funds. Payments are approved in Nimiq Pay.</p>
+          <p>Nimsplit never asks for private keys and never holds your funds. Payments are approved in Nimiq Pay.</p>
           <p>USDT settlements use Polygon. NIM settlements use the Nimiq Mini App provider.</p>
-          <p>Tabiq 1.0.0 · MIT License</p>
+          <p>Nimsplit 1.0.0 · MIT License</p>
         </section>
       </div>
     </div>

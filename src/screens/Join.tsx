@@ -78,7 +78,7 @@ export function Join() {
       <ScreenHeader
         title="Join"
         subtitle="Enter a short code."
-        back={<BackButton onClick={() => nav('/')} />}
+        back={<BackButton onClick={() => nav('/app')} />}
       />
 
       {wallet.status !== 'connected' && (

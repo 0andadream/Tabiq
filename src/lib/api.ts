@@ -48,7 +48,7 @@ async function request<T>(path: string, init?: RequestInit): Promise<T> {
     if (error instanceof AppError) throw error
     throw new AppError(
       'backend_unavailable',
-      'Tabiq cannot reach the server right now. Check your connection and retry.',
+      'Nimsplit cannot reach the server right now. Check your connection and retry.',
       true,
     )
   } finally {

@@ -56,7 +56,7 @@ export function classifyWalletError(error: unknown): AppError {
   if (/timeout|timed out|not detected|not running|inject/.test(lower)) {
     return new AppError(
       'wallet_unavailable',
-      'Nimiq Pay wallet is not available. Open Tabiq inside Nimiq Pay.',
+      'Nimiq Pay wallet is not available. Open Nimsplit inside Nimiq Pay.',
       true,
     )
   }

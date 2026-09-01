@@ -18,7 +18,7 @@ function getProvider(): EthereumProvider {
   if (!window.ethereum) {
     throw new AppError(
       'wallet_unavailable',
-      'Ethereum wallet is not available. Open Tabiq inside Nimiq Pay to pay with USDT.',
+      'Ethereum wallet is not available. Open Nimsplit inside Nimiq Pay to pay with USDT.',
       true,
     )
   }

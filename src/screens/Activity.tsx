@@ -94,7 +94,7 @@ export function Activity({ global = false }: { global?: boolean }) {
       <ScreenHeader
         title={title}
         subtitle={global ? 'Expenses and payments' : 'Expenses and payments'}
-        back={<BackButton onClick={() => nav(global ? '/' : `/g/${id}`)} />}
+        back={<BackButton onClick={() => nav(global ? '/app' : `/g/${id}`)} />}
       />
       {error && <Notice tone="danger">{error}</Notice>}
       <div className="hairline" />

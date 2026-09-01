@@ -40,10 +40,10 @@ export function CreateGroup() {
       <ScreenHeader
         title="Create"
         subtitle="Name the group. Share a code later."
-        back={<BackButton onClick={() => nav('/')} />}
+        back={<BackButton onClick={() => nav('/app')} />}
       />
       {wallet.status !== 'connected' && (
-        <Notice tone="warn">Wallet not connected. Open Tabiq inside Nimiq Pay.</Notice>
+        <Notice tone="warn">Wallet not connected. Open Nimsplit inside Nimiq Pay.</Notice>
       )}
       {error && <Notice tone="danger">{error}</Notice>}
       <Field label="Group name">

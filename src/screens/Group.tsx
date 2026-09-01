@@ -77,7 +77,7 @@ export function GroupScreen() {
   if (!group || !view) {
     return (
       <div className="screen">
-        <ScreenHeader title="Group" back={<BackButton onClick={() => nav('/')} />} />
+        <ScreenHeader title="Group" back={<BackButton onClick={() => nav('/app')} />} />
         {error ? <Notice tone="danger">{error}</Notice> : <p className="text-muted">Loading…</p>}
       </div>
     )
@@ -90,7 +90,7 @@ export function GroupScreen() {
     <div className="screen">
       <ScreenHeader
         title={group.name}
-        back={<BackButton onClick={() => nav('/')} />}
+        back={<BackButton onClick={() => nav('/app')} />}
         action={
           <button onClick={() => nav(`/g/${group.id}/invite`)} className="text-[13px] text-muted">
             Invite

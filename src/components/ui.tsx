@@ -2,10 +2,16 @@ import type { Currency, PaymentStatus } from '@shared/types.ts'
 import { useEffect, useState, type ButtonHTMLAttributes, type InputHTMLAttributes, type ReactNode } from 'react'
 import { initials, moneyNumber } from '../lib/format.ts'
 
-export function Logo() {
+export function Logo({ size = 'sm' }: { size?: 'sm' | 'lg' }) {
   return (
-    <div className="text-[20px] font-semibold tracking-[-0.04em]">
-      Tabiq
+    <div
+      className={
+        size === 'lg'
+          ? 'text-[44px] font-semibold tracking-[-0.06em] leading-none'
+          : 'text-[20px] font-semibold tracking-[-0.04em]'
+      }
+    >
+      Nimsplit
     </div>
   )
 }

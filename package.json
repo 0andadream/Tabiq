@@ -3,7 +3,7 @@
   "private": true,
   "version": "1.0.0",
   "type": "module",
-  "description": "Tabiq — split the bill, settle in NIM. A Nimiq Pay Mini App.",
+  "description": "Nimsplit — split the bill, settle in NIM. A Nimiq Pay Mini App.",
   "license": "MIT",
   "repository": {
     "type": "git",

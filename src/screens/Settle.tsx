@@ -56,7 +56,7 @@ export function Settle({ inSheet = false, onClose }: { inSheet?: boolean; onClos
     if (!group || !me || !debt || !recipient || lock.current) return
     if (wallet.status !== 'connected') {
       setErrorCode('wallet_disconnected')
-      setError('Wallet disconnected. Reopen Tabiq inside Nimiq Pay.')
+      setError('Wallet disconnected. Reopen Nimsplit inside Nimiq Pay.')
       setPhase('failed')
       return
     }
@@ -108,7 +108,7 @@ export function Settle({ inSheet = false, onClose }: { inSheet?: boolean; onClos
         txHash = await sendNim({
           recipient: recipient.nimiqAddress,
           valueLuna: Number(debt.amountMinor),
-          memo: `Tabiq ${group.name}`.slice(0, 64),
+          memo: `Nimsplit ${group.name}`.slice(0, 64),
         })
       } else {
         if (!recipient.ethAddress) throw new Error('Recipient has no Polygon address.')
@@ -264,7 +264,7 @@ export function Settle({ inSheet = false, onClose }: { inSheet?: boolean; onClos
         </div>
       )}
       {wallet.status !== 'connected' && (
-        <div className="mb-4"><Notice tone="warn">Wallet disconnected. Reopen Tabiq inside Nimiq Pay.</Notice></div>
+        <div className="mb-4"><Notice tone="warn">Wallet disconnected. Reopen Nimsplit inside Nimiq Pay.</Notice></div>
       )}
 
       <p className="text-[14px] text-muted mb-4">To {memberLabel(recipient, me.id)}</p>
