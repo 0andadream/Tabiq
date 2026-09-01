@@ -1,6 +1,6 @@
 import { useEffect, useState } from 'react'
 import { useNavigate, useParams, useSearchParams } from 'react-router-dom'
-import { BackButton, Banner, Button, Field, Input, ScreenHeader } from '../components/ui.tsx'
+import { BackButton, Button, Field, Input, Notice, ScreenHeader } from '../components/ui.tsx'
 import { useWallet } from '../context/WalletContext.tsx'
 import { joinGroup, lookupCode } from '../lib/api.ts'
 import { isAppError, toErrorMessage } from '../lib/errors.ts'
@@ -76,23 +76,15 @@ export function Join() {
   return (
     <div className="screen">
       <ScreenHeader
-        title="Join group"
-        subtitle="Enter a short code or open a Tabiq invite."
+        title="Join"
+        subtitle="Enter a short code."
         back={<BackButton onClick={() => nav('/')} />}
       />
 
       {wallet.status !== 'connected' && (
-        <div className="mb-5">
-          <Banner tone="warn">
-            Wallet not connected. You can still open the Friday Dinner preview; live joins need Nimiq Pay.
-          </Banner>
-        </div>
+        <Notice tone="muted">Wallet not connected. Friday Dinner still opens as a preview.</Notice>
       )}
-      {error && (
-        <div className="mb-5">
-          <Banner tone="danger">{error}</Banner>
-        </div>
-      )}
+      {error && <Notice tone="danger">{error}</Notice>}
 
       <Field label="Group code">
         <Input
@@ -106,15 +98,15 @@ export function Join() {
       </Field>
 
       {preview && (
-        <div className="mt-6 rounded-2xl border border-white/10 p-4">
-          <div className="text-[18px]">{preview.name}</div>
-          <div className="mt-1 text-[13px] text-muted">
+        <div className="mt-8 py-5 border-t border-b border-line">
+          <div className="text-[22px] font-semibold tracking-[-0.04em]">{preview.name}</div>
+          <div className="mt-2 text-[13px] text-muted">
             {preview.memberCount} {preview.memberCount === 1 ? 'member' : 'members'}
           </div>
         </div>
       )}
 
-      <Button className="w-full mt-8" onClick={() => void onJoin()} disabled={busy || code.trim().length < 4}>
+      <Button className="w-full mt-10" onClick={() => void onJoin()} disabled={busy || code.trim().length < 4}>
         {busy ? 'Joining…' : preview?.name === 'Friday Dinner' ? 'Join Friday Dinner' : 'Join group'}
       </Button>
     </div>

@@ -1,6 +1,6 @@
 import { useState } from 'react'
 import { useNavigate } from 'react-router-dom'
-import { BackButton, Banner, Button, Field, Input, ScreenHeader } from '../components/ui.tsx'
+import { BackButton, Button, Field, Input, Notice, ScreenHeader } from '../components/ui.tsx'
 import { useWallet } from '../context/WalletContext.tsx'
 import { createGroup } from '../lib/api.ts'
 import { toErrorMessage } from '../lib/errors.ts'
@@ -38,20 +38,14 @@ export function CreateGroup() {
   return (
     <div className="screen">
       <ScreenHeader
-        title="Create group"
-        subtitle="Share a code. Split later."
+        title="Create"
+        subtitle="Name the group. Share a code later."
         back={<BackButton onClick={() => nav('/')} />}
       />
       {wallet.status !== 'connected' && (
-        <div className="mb-5">
-          <Banner tone="warn">Wallet not connected. Open Tabiq inside Nimiq Pay.</Banner>
-        </div>
+        <Notice tone="warn">Wallet not connected. Open Tabiq inside Nimiq Pay.</Notice>
       )}
-      {error && (
-        <div className="mb-5">
-          <Banner tone="danger">{error}</Banner>
-        </div>
-      )}
+      {error && <Notice tone="danger">{error}</Notice>}
       <Field label="Group name">
         <Input
           value={name}
@@ -60,7 +54,7 @@ export function CreateGroup() {
           maxLength={48}
         />
       </Field>
-      <Button className="w-full mt-8" disabled={busy || name.trim().length < 2} onClick={() => void onCreate()}>
+      <Button className="w-full mt-10" disabled={busy || name.trim().length < 2} onClick={() => void onCreate()}>
         {busy ? 'Creating…' : 'Create group'}
       </Button>
     </div>

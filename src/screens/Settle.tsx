@@ -1,10 +1,10 @@
-import { useEffect, useMemo, useRef, useState } from 'react'
+import { useEffect, useMemo, useRef, useState, type ReactNode } from 'react'
 import { useNavigate, useParams, useSearchParams } from 'react-router-dom'
 import { formatNimiqAddress, shortenEthAddress, shortenNimiqAddress } from '@shared/address.ts'
 import { netsForCurrency, pairwiseDebts } from '@shared/balances.ts'
 import { minorToDisplay } from '@shared/money.ts'
 import type { Currency, Group, Network, Payment } from '@shared/types.ts'
-import { Amount, BackButton, Banner, Button, ScreenHeader, StatusPill } from '../components/ui.tsx'
+import { Amount, BackButton, Button, Notice, ScreenHeader, Segmented, StatusMark } from '../components/ui.tsx'
 import { useWallet } from '../context/WalletContext.tsx'
 import { createPayment, fetchGroup, updatePayment } from '../lib/api.ts'
 import { isAppError, toErrorMessage, type AppErrorCode } from '../lib/errors.ts'
@@ -15,10 +15,14 @@ import { nimiqExplorerUrl, sendNim } from '../lib/nimiq.ts'
 
 type Phase = 'ready' | 'pending' | 'success' | 'rejected' | 'failed'
 
-export function Settle() {
+export function Settle({ inSheet = false, onClose }: { inSheet?: boolean; onClose?: () => void } = {}) {
   const { id = '' } = useParams()
   const [params] = useSearchParams()
   const nav = useNavigate()
+  const goBack = () => {
+    if (inSheet) onClose?.()
+    else nav(`/g/${id}`)
+  }
   const wallet = useWallet()
   const [group, setGroup] = useState<Group | null>(null)
   const [currency, setCurrency] = useState<Currency>((params.get('currency') as Currency) || 'NIM')
@@ -157,12 +161,15 @@ export function Settle() {
     }
   }
 
+  const wrap = (node: ReactNode) =>
+    inSheet ? <div>{node}</div> : <div className="screen">{node}</div>
+
   if (!group) {
-    return (
-      <div className="screen">
-        <ScreenHeader title="Pay" back={<BackButton onClick={() => nav(-1)} />} />
-        {error ? <Banner tone="danger">{error}</Banner> : <p className="text-muted">Loading…</p>}
-      </div>
+    return wrap(
+      <>
+        {!inSheet && <ScreenHeader title="Pay" back={<BackButton onClick={() => nav(-1)} />} />}
+        {error ? <Notice tone="danger">{error}</Notice> : <p className="text-muted">Loading…</p>}
+      </>,
     )
   }
 
@@ -173,144 +180,136 @@ export function Settle() {
         ? nimiqExplorerUrl(payment.txHash)
         : null
     return (
-      <div className="screen">
-        <ScreenHeader title="Settled" back={<BackButton onClick={() => nav(`/g/${group.id}`)} />} />
-        <div className="mt-6 text-ok text-[28px] font-medium">Settled ✓</div>
-        <div className="mt-8">
-          <Amount value={payment.amountMinor} currency={payment.currency} tone="ok" />
-        </div>
-        <dl className="mt-8 space-y-4 text-[15px]">
-          <div className="flex justify-between gap-4">
-            <dt className="text-muted">Recipient</dt>
-            <dd>{recipient.displayName}</dd>
+      wrap(
+        <>
+          {!inSheet && <ScreenHeader title="Settled" back={<BackButton onClick={goBack} />} />}
+          <p className="text-[28px] font-semibold tracking-[-0.04em] text-ok">Settled</p>
+          <div className="mt-8">
+            <Amount value={payment.amountMinor} currency={payment.currency} tone="ok" />
           </div>
-          <div className="flex justify-between gap-4">
-            <dt className="text-muted">Time</dt>
-            <dd>{formatTime(payment.updatedAt)}</dd>
+          <div className="mt-8 hairline" />
+          <div className="py-4 flex justify-between text-[15px] border-b border-line">
+            <span className="text-muted">To</span>
+            <span>{recipient.displayName}</span>
+          </div>
+          <div className="py-4 flex justify-between text-[15px] border-b border-line">
+            <span className="text-muted">Time</span>
+            <span>{formatTime(payment.updatedAt)}</span>
           </div>
           {payment.txHash && (
-            <div>
-              <dt className="text-muted mb-1">Transaction</dt>
-              <dd className="break-all text-[13px] text-ink/80">{payment.txHash}</dd>
+            <div className="py-4 border-b border-line">
+              <div className="text-muted text-[13px] mb-1">Transaction</div>
+              <div className="break-all text-[12px] text-muted font-mono">{payment.txHash}</div>
             </div>
           )}
-        </dl>
-        {explorer && (
-          <a className="mt-6 inline-block text-gold text-[14px]" href={explorer} target="_blank" rel="noreferrer">
-            View on explorer
-          </a>
-        )}
-        <Button className="w-full mt-10" onClick={() => nav(`/g/${group.id}`)}>
-          Back to group
-        </Button>
-      </div>
+          {explorer && (
+            <a className="mt-5 inline-block text-[14px] text-gold" href={explorer} target="_blank" rel="noreferrer">
+              View on explorer
+            </a>
+          )}
+          <Button className="w-full mt-8" variant="secondary" onClick={goBack}>
+            Done
+          </Button>
+        </>,
+      )
     )
   }
 
   if (!me) {
     return (
-      <div className="screen">
-        <ScreenHeader title="Pay" back={<BackButton onClick={() => nav(`/g/${group.id}`)} />} />
-        <Banner tone="warn">Join this group with your wallet before paying.</Banner>
-      </div>
+      wrap(
+        <>
+          {!inSheet && <ScreenHeader title="Pay" back={<BackButton onClick={goBack} />} />}
+          <Notice tone="warn">Join this group with your wallet before paying.</Notice>
+        </>,
+      )
     )
   }
 
   if (!debt || !recipient) {
     return (
-      <div className="screen">
-        <ScreenHeader title="Pay" back={<BackButton onClick={() => nav(`/g/${group.id}`)} />} />
-        <Banner tone="muted">Nothing to pay in {currency}. Switch currency or go back to the group.</Banner>
-        <Button className="w-full mt-8" variant="secondary" onClick={() => nav(`/g/${group.id}`)}>
-          Back to group
-        </Button>
-      </div>
+      wrap(
+        <>
+          {!inSheet && <ScreenHeader title="Pay" back={<BackButton onClick={goBack} />} />}
+          <Notice tone="muted">Nothing to pay in {currency}.</Notice>
+          <Button className="w-full mt-8" variant="secondary" onClick={goBack}>
+            Close
+          </Button>
+        </>,
+      )
     )
   }
 
   const canPayCurrency = currency === 'NIM' ? Boolean(recipient.nimiqAddress) : Boolean(recipient.ethAddress)
   const networkLabel = currency === 'NIM' ? 'Nimiq' : 'Polygon'
 
-  return (
-    <div className="screen">
-      <ScreenHeader title="Pay your share" back={<BackButton onClick={() => nav(`/g/${group.id}`)} />} />
+  return wrap(
+    <>
+      {!inSheet && <ScreenHeader title="Pay your share" back={<BackButton onClick={goBack} />} />}
 
       {phase === 'pending' && (
-        <div className="mb-5">
-          <Banner tone="warn">Payment pending. Approve in Nimiq Pay. Do not close this screen.</Banner>
-        </div>
+        <div className="mb-4"><Notice tone="warn">Payment pending. Approve in Nimiq Pay.</Notice></div>
       )}
       {phase === 'rejected' && (
-        <div className="mb-5">
-          <Banner tone="danger">{error ?? 'Payment was rejected in the wallet.'}</Banner>
-        </div>
+        <div className="mb-4"><Notice tone="danger">{error ?? 'Payment was rejected in the wallet.'}</Notice></div>
       )}
       {phase === 'failed' && (
-        <div className="mb-5">
-          <Banner tone="danger">
-            {errorCode === 'insufficient_balance' && 'Not enough balance to complete this payment. '}
-            {errorCode === 'wrong_network' && 'Wrong network. Switch to Polygon and retry. '}
+        <div className="mb-4">
+          <Notice tone="danger">
+            {errorCode === 'insufficient_balance' && 'Not enough balance. '}
+            {errorCode === 'wrong_network' && 'Switch to Polygon and retry. '}
             {errorCode === 'duplicate_payment' && 'This payment was already submitted. '}
             {error ?? 'Payment failed. It was not marked as paid.'}
-          </Banner>
+          </Notice>
         </div>
       )}
       {wallet.status !== 'connected' && (
-        <div className="mb-5">
-          <Banner tone="warn">Wallet disconnected. Reopen Tabiq inside Nimiq Pay.</Banner>
-        </div>
+        <div className="mb-4"><Notice tone="warn">Wallet disconnected. Reopen Tabiq inside Nimiq Pay.</Notice></div>
       )}
 
-      <div className="text-[12px] uppercase tracking-[0.16em] text-muted mb-2">You owe</div>
+      <p className="text-[14px] text-muted mb-4">To {memberLabel(recipient, me.id)}</p>
       <Amount value={debt.amountMinor} currency={currency} tone="owe" size="xl" />
 
-      <dl className="mt-8 space-y-4 text-[15px]">
-        <div className="flex justify-between gap-4">
-          <dt className="text-muted">Recipient</dt>
-          <dd>{memberLabel(recipient, me.id)}</dd>
-        </div>
-        <div className="flex justify-between gap-4">
-          <dt className="text-muted">Exact amount</dt>
-          <dd>{money(debt.amountMinor, currency)}</dd>
-        </div>
-        <div>
-          <dt className="text-muted mb-2">Pay with</dt>
-          <div className="grid grid-cols-2 gap-2">
-            {(['NIM', 'USDT'] as Currency[]).map((item) => (
-              <button
-                key={item}
-                disabled={phase === 'pending'}
-                onClick={() => setCurrency(item)}
-                className={`h-12 rounded-2xl border ${currency === item ? 'border-gold text-gold bg-gold/10' : 'border-white/10 text-muted'}`}
-              >
-                {item}
-              </button>
-            ))}
-          </div>
-        </div>
-        <div className="flex justify-between gap-4">
-          <dt className="text-muted">Network</dt>
-          <dd>{networkLabel}</dd>
-        </div>
-        <div className="flex justify-between gap-4">
-          <dt className="text-muted">To</dt>
-          <dd className="text-right text-[13px]">
-            {currency === 'NIM' && recipient.nimiqAddress
-              ? shortenNimiqAddress(formatNimiqAddress(recipient.nimiqAddress))
-              : recipient.ethAddress
-                ? shortenEthAddress(recipient.ethAddress)
-                : 'No address'}
-          </dd>
-        </div>
-      </dl>
+      <div className="mt-8">
+        <div className="text-[12px] text-muted mb-2">Pay with</div>
+        <Segmented
+          value={currency}
+          disabled={phase === 'pending'}
+          onChange={setCurrency}
+          options={[
+            { value: 'NIM', label: 'NIM' },
+            { value: 'USDT', label: 'USDT' },
+          ]}
+        />
+      </div>
+
+      <div className="mt-6 hairline" />
+      <div className="py-4 flex justify-between text-[15px] border-b border-line">
+        <span className="text-muted">Amount</span>
+        <span>{money(debt.amountMinor, currency)}</span>
+      </div>
+      <div className="py-4 flex justify-between text-[15px] border-b border-line">
+        <span className="text-muted">Network</span>
+        <span>{networkLabel}</span>
+      </div>
+      <div className="py-4 flex justify-between gap-4 text-[15px] border-b border-line">
+        <span className="text-muted">Address</span>
+        <span className="text-right text-[13px] font-mono">
+          {currency === 'NIM' && recipient.nimiqAddress
+            ? shortenNimiqAddress(formatNimiqAddress(recipient.nimiqAddress))
+            : recipient.ethAddress
+              ? shortenEthAddress(recipient.ethAddress)
+              : 'No address'}
+        </span>
+      </div>
 
       {!canPayCurrency && (
-        <div className="mt-6">
-          <Banner tone="warn">
+        <div className="mt-4">
+          <Notice tone="warn">
             {currency === 'NIM'
-              ? 'This recipient has no Nimiq address. Pay with USDT or ask them to connect NIM.'
-              : 'This recipient has no Polygon address. Pay with NIM or ask them to connect Ethereum.'}
-          </Banner>
+              ? 'This recipient has no Nimiq address. Pay with USDT.'
+              : 'This recipient has no Polygon address. Pay with NIM.'}
+          </Notice>
         </div>
       )}
 
@@ -323,10 +322,14 @@ export function Settle() {
       </Button>
       {(phase === 'failed' || phase === 'rejected') && (
         <Button className="w-full mt-3" variant="secondary" onClick={() => void pay()}>
-          Retry payment
+          Retry
         </Button>
       )}
-      {payment && <div className="mt-4"><StatusPill status={payment.status} /></div>}
-    </div>
+      {payment && (
+        <div className="mt-5">
+          <StatusMark status={payment.status} />
+        </div>
+      )}
+    </>,
   )
 }

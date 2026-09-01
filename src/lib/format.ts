@@ -18,7 +18,7 @@ export function initials(name: string): string {
 }
 
 export function memberLabel(member: Member, currentId?: string | null): string {
-  if (currentId && member.id === currentId) return `${member.displayName} (you)`
+  if (currentId && member.id === currentId) return 'You'
   return member.displayName
 }
 

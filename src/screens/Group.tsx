@@ -1,21 +1,37 @@
 import { useEffect, useMemo, useState } from 'react'
-import { useNavigate, useParams } from 'react-router-dom'
+import { useNavigate, useParams, useSearchParams } from 'react-router-dom'
 import { netsForCurrency, pairwiseDebts } from '@shared/balances.ts'
 import { minorToDisplay } from '@shared/money.ts'
 import type { Currency, Group } from '@shared/types.ts'
-import { Amount, Avatar, BackButton, Banner, Button, ScreenHeader, StatusPill } from '../components/ui.tsx'
+import { Amount, Avatar, BackButton, Button, Notice, ScreenHeader, Sheet, StatusMark } from '../components/ui.tsx'
 import { useWallet } from '../context/WalletContext.tsx'
 import { fetchGroup } from '../lib/api.ts'
 import { toErrorMessage } from '../lib/errors.ts'
 import { memberLabel, money } from '../lib/format.ts'
 import { findMe } from '../lib/identity.ts'
+import { AddExpense } from './AddExpense.tsx'
+import { Settle } from './Settle.tsx'
 
 export function GroupScreen() {
   const { id = '' } = useParams()
+  const [params, setParams] = useSearchParams()
   const nav = useNavigate()
   const wallet = useWallet()
   const [group, setGroup] = useState<Group | null>(null)
   const [error, setError] = useState<string | null>(null)
+  const sheet = params.get('pay') ? 'pay' : params.get('add') ? 'add' : null
+
+  function closeSheet() {
+    setParams({})
+  }
+
+  function openPay(to?: string, currency?: string) {
+    const next = new URLSearchParams()
+    next.set('pay', '1')
+    if (to) next.set('to', to)
+    if (currency) next.set('currency', currency)
+    setParams(next)
+  }
 
   useEffect(() => {
     let cancelled = false
@@ -62,7 +78,7 @@ export function GroupScreen() {
     return (
       <div className="screen">
         <ScreenHeader title="Group" back={<BackButton onClick={() => nav('/')} />} />
-        {error ? <Banner tone="danger">{error}</Banner> : <p className="text-muted">Loading…</p>}
+        {error ? <Notice tone="danger">{error}</Notice> : <p className="text-muted">Loading…</p>}
       </div>
     )
   }
@@ -74,141 +90,139 @@ export function GroupScreen() {
     <div className="screen">
       <ScreenHeader
         title={group.name}
-        subtitle={`${group.members.filter((member) => member.claimed).length} people · code ${group.code}`}
         back={<BackButton onClick={() => nav('/')} />}
         action={
-          <button onClick={() => nav(`/g/${group.id}/invite`)} className="text-[12px] uppercase tracking-[0.14em] text-gold mt-2">
+          <button onClick={() => nav(`/g/${group.id}/invite`)} className="text-[13px] text-muted">
             Invite
           </button>
         }
       />
 
-      {error && (
-        <div className="mb-5">
-          <Banner tone="danger">{error}</Banner>
-        </div>
-      )}
+      {error && <div className="mb-5"><Notice tone="danger">{error}</Notice></div>}
 
-      <section>
-        <div className="text-[12px] uppercase tracking-[0.16em] text-muted mb-2">Total expenses</div>
-        <Amount value={view.total[primaryCurrency]} currency={primaryCurrency} size="lg" />
-        {view.total.NIM > 0n && view.total.USDT > 0n && (
-          <p className="mt-2 text-[13px] text-muted">{minorToDisplay(view.total.USDT, 'USDT')} USDT</p>
-        )}
-      </section>
-
-      <section className="mt-8">
-        <div className="text-[12px] uppercase tracking-[0.16em] text-muted mb-3">Current balance</div>
-        {me && myOwe > 0n ? (
-          <p className="text-[18px] text-gold">You owe {money(myOwe, primaryCurrency)}</p>
-        ) : me && view.myCredits.length > 0 ? (
-          <p className="text-[18px] text-ok">
-            You're owed {money(view.myCredits.reduce((acc, debt) => acc + debt.amountMinor, 0n), view.myCredits[0].currency)}
-          </p>
-        ) : (
-          <p className="text-[18px] text-ok">Settled</p>
-        )}
-      </section>
-
-      <section className="mt-8">
-        <div className="text-[12px] uppercase tracking-[0.16em] text-muted mb-3">Who owes whom</div>
-        {view.debts.length === 0 ? (
-          <p className="text-[14px] text-muted">Everyone is settled.</p>
-        ) : (
-          <div className="space-y-3">
-            {view.debts.map((debt) => {
-              const from = group.members.find((member) => member.id === debt.fromMemberId)
-              const to = group.members.find((member) => member.id === debt.toMemberId)
-              if (!from || !to) return null
-              const mine = me?.id === from.id
-              return (
-                <div key={`${debt.fromMemberId}-${debt.toMemberId}-${debt.currency}`} className="flex items-center justify-between gap-3">
-                  <div className="min-w-0">
-                    <div className="text-[15px] truncate">
-                      {memberLabel(from, me?.id)} owes {memberLabel(to, me?.id)}
-                    </div>
-                    <div className="text-[13px] text-muted mt-0.5">{money(debt.amountMinor, debt.currency)}</div>
-                  </div>
-                  {mine && (
-                    <Button
-                      className="h-10 px-4 text-[13px] shrink-0"
-                      onClick={() =>
-                        nav(
-                          `/g/${group.id}/pay?to=${to.id}&currency=${debt.currency}&amount=${debt.amountMinor.toString()}`,
-                        )
-                      }
-                    >
-                      Pay
-                    </Button>
-                  )}
-                </div>
-              )
-            })}
-          </div>
-        )}
-      </section>
+      <Amount value={view.total[primaryCurrency]} currency={primaryCurrency} size="lg" />
+      <p className={`mt-4 text-[15px] ${me && myOwe > 0n ? 'text-danger' : 'text-ok'}`}>
+        {me && myOwe > 0n
+          ? `You owe ${money(myOwe, primaryCurrency)}`
+          : me && view.myCredits.length > 0
+            ? `They owe you ${money(view.myCredits.reduce((acc, debt) => acc + debt.amountMinor, 0n), view.myCredits[0].currency)}`
+            : 'Settled'}
+      </p>
 
       {me && view.myDebts[0] && (
-        <Button
-          className="w-full mt-8"
-          onClick={() =>
-            nav(
-              `/g/${group.id}/pay?to=${view.myDebts[0].toMemberId}&currency=${view.myDebts[0].currency}&amount=${view.myDebts[0].amountMinor.toString()}`,
-            )
-          }
-        >
+        <Button className="w-full mt-8" onClick={() => openPay(view.myDebts[0].toMemberId, view.myDebts[0].currency)}>
           Pay your share
         </Button>
       )}
 
-      <div className="mt-4 grid grid-cols-2 gap-3">
-        <Button variant="secondary" onClick={() => nav(`/g/${group.id}/add`)}>
-          Add expense
-        </Button>
-        <Button variant="secondary" onClick={() => nav(`/g/${group.id}/activity`)}>
-          Activity
-        </Button>
-      </div>
-
       <section className="mt-10">
-        <div className="text-[12px] uppercase tracking-[0.16em] text-muted mb-4">Expenses</div>
-        {group.expenses.length === 0 ? (
-          <p className="text-[14px] text-muted">No expenses yet.</p>
+        <div className="text-[13px] text-muted mb-2">Who owes whom</div>
+        <div className="hairline" />
+        {view.debts.length === 0 ? (
+          <p className="py-5 text-[14px] text-muted">Everyone is settled.</p>
         ) : (
-          <div className="space-y-4">
-            {[...group.expenses].reverse().map((expense) => {
-              const payer = group.members.find((member) => member.id === expense.payerId)
-              const mySplit = me ? expense.splits.find((split) => split.memberId === me.id) : undefined
-              const myPayment = me
-                ? group.payments.find(
-                    (payment) =>
-                      payment.fromMemberId === me.id &&
-                      (payment.status === 'submitted' || payment.status === 'confirmed') &&
-                      payment.currency === expense.currency,
-                  )
-                : undefined
-              const unpaid = Boolean(mySplit && me && expense.payerId !== me.id && !myPayment && view.myDebts.some((debt) => debt.currency === expense.currency))
-              return (
-                <div key={expense.id} className="flex items-start justify-between gap-3">
-                  <div className="flex gap-3 min-w-0">
-                    <Avatar name={payer?.displayName ?? 'Payer'} />
-                    <div className="min-w-0">
-                      <div className="text-[16px] truncate">{expense.title}</div>
-                      <div className="text-[13px] text-muted mt-0.5">
-                        {payer ? memberLabel(payer, me?.id) : 'Someone'} paid {money(expense.amountMinor, expense.currency)}
-                      </div>
-                      {mySplit && me && expense.payerId !== me.id && (
-                        <div className="text-[13px] mt-1 text-gold">Your share {money(mySplit.amountMinor, expense.currency)}</div>
-                      )}
-                    </div>
+          view.debts.map((debt) => {
+            const from = group.members.find((member) => member.id === debt.fromMemberId)
+            const to = group.members.find((member) => member.id === debt.toMemberId)
+            if (!from || !to) return null
+            const mine = me?.id === from.id
+            return (
+              <div
+                key={`${debt.fromMemberId}-${debt.toMemberId}-${debt.currency}`}
+                className="py-4 flex items-center justify-between gap-3 border-b border-line"
+              >
+                <div className="flex items-center gap-3 min-w-0">
+                  <Avatar name={from.displayName} />
+                  <div className="min-w-0 text-[15px] truncate">
+                    {memberLabel(from, me?.id)}
+                    <span className="text-muted"> → </span>
+                    {memberLabel(to, me?.id)}
                   </div>
-                  <StatusPill status={unpaid ? 'unpaid' : 'settled'} />
                 </div>
-              )
-            })}
-          </div>
+                <div className="flex items-center gap-3 shrink-0 tabular-nums">
+                  <span className="num text-[16px] text-danger">{minorToDisplay(debt.amountMinor, debt.currency)}</span>
+                  {mine && (
+                    <button className="text-[13px] text-gold" onClick={() => openPay(to.id, debt.currency)}>
+                      Pay
+                    </button>
+                  )}
+                </div>
+              </div>
+            )
+          })
         )}
       </section>
+
+      <section className="mt-10">
+        <div className="text-[13px] text-muted mb-2">Expenses</div>
+        <div className="hairline" />
+        {group.expenses.length === 0 ? (
+          <p className="py-5 text-[14px] text-muted">No expenses yet.</p>
+        ) : (
+          [...group.expenses].reverse().map((expense) => {
+            const payer = group.members.find((member) => member.id === expense.payerId)
+            const mySplit = me ? expense.splits.find((split) => split.memberId === me.id) : undefined
+            const myPayment = me
+              ? group.payments.find(
+                  (payment) =>
+                    payment.fromMemberId === me.id &&
+                    (payment.status === 'submitted' || payment.status === 'confirmed') &&
+                    payment.currency === expense.currency,
+                )
+              : undefined
+            const unpaid = Boolean(
+              mySplit && me && expense.payerId !== me.id && !myPayment && view.myDebts.some((debt) => debt.currency === expense.currency),
+            )
+            return (
+              <div
+                key={expense.id}
+                className={`py-4 border-b border-line flex items-center justify-between gap-3 transition-opacity ${unpaid ? '' : 'opacity-55'}`}
+              >
+                <div className="flex items-center gap-3 min-w-0">
+                  <Avatar name={payer?.displayName ?? 'Payer'} dim={!unpaid} />
+                  <div className="min-w-0">
+                    <div className="text-[15px] font-medium truncate">{expense.title}</div>
+                    <div className="mt-0.5 text-[12px] text-muted">
+                      {payer ? memberLabel(payer, me?.id) : 'Someone'} · {money(expense.amountMinor, expense.currency)}
+                    </div>
+                  </div>
+                </div>
+                {unpaid && mySplit ? (
+                  <span className="num text-[16px] text-danger">{minorToDisplay(mySplit.amountMinor, expense.currency)}</span>
+                ) : (
+                  <StatusMark status="settled" />
+                )}
+              </div>
+            )
+          })
+        )}
+      </section>
+
+      <button className="mt-8 text-[14px] text-muted" onClick={() => nav(`/g/${group.id}/activity`)}>
+        Activity
+      </button>
+
+      {!view.myDebts[0] && (
+        <Button className="w-full mt-8" variant="secondary" onClick={() => setParams({ add: '1' })}>
+          Add expense
+        </Button>
+      )}
+      {view.myDebts[0] && (
+        <button className="mt-6 block w-full text-center text-[14px] text-muted" onClick={() => setParams({ add: '1' })}>
+          Add expense
+        </button>
+      )}
+
+      {sheet === 'pay' && (
+        <Sheet title="Pay your share" onClose={closeSheet}>
+          <Settle inSheet onClose={closeSheet} />
+        </Sheet>
+      )}
+      {sheet === 'add' && (
+        <Sheet title="Add expense" onClose={closeSheet}>
+          <AddExpense inSheet onClose={closeSheet} />
+        </Sheet>
+      )}
     </div>
   )
 }

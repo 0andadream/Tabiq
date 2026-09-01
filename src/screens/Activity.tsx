@@ -2,7 +2,7 @@ import { useEffect, useMemo, useState } from 'react'
 import { useNavigate, useParams } from 'react-router-dom'
 import { SETTLED_STATUSES } from '@shared/balances.ts'
 import type { Group } from '@shared/types.ts'
-import { Avatar, BackButton, Banner, ScreenHeader, StatusPill } from '../components/ui.tsx'
+import { BackButton, Notice, ScreenHeader, StatusMark } from '../components/ui.tsx'
 import { useWallet } from '../context/WalletContext.tsx'
 import { fetchGroup, fetchMyGroups } from '../lib/api.ts'
 import { toErrorMessage } from '../lib/errors.ts'
@@ -16,7 +16,7 @@ type ActivityItem = {
   at: number
   title: string
   detail: string
-  status?: Parameters<typeof StatusPill>[0]['status']
+  status?: 'pending' | 'submitted' | 'confirmed' | 'failed' | 'rejected' | 'unpaid' | 'settled'
   hash?: string | null
   network?: 'nimiq' | 'polygon' | null
   groupName?: string
@@ -93,53 +93,43 @@ export function Activity({ global = false }: { global?: boolean }) {
     <div className="screen">
       <ScreenHeader
         title={title}
-        subtitle={global ? 'Expenses and payments across your groups' : 'Expenses and payments'}
+        subtitle={global ? 'Expenses and payments' : 'Expenses and payments'}
         back={<BackButton onClick={() => nav(global ? '/' : `/g/${id}`)} />}
       />
-      {error && (
-        <div className="mb-5">
-          <Banner tone="danger">{error}</Banner>
-        </div>
-      )}
+      {error && <Notice tone="danger">{error}</Notice>}
+      <div className="hairline" />
       {items.length === 0 ? (
-        <p className="text-[14px] text-muted">Nothing here yet.</p>
+        <p className="py-6 text-[14px] text-muted">Nothing here yet.</p>
       ) : (
-        <div className="space-y-5">
-          {items.map((item) => {
-            const explorer = item.hash
-              ? item.network === 'polygon'
-                ? polygonExplorerUrl(item.hash)
-                : nimiqExplorerUrl(item.hash)
-              : null
-            return (
-              <div key={item.id} className="flex gap-3">
-                <Avatar name={item.title} />
-                <div className="min-w-0 flex-1">
-                  <div className="flex items-start justify-between gap-3">
-                    <div className="min-w-0">
-                      <div className="text-[16px]">{item.title}</div>
-                      {item.groupName && <div className="text-[12px] text-muted mt-0.5">{item.groupName}</div>}
-                    </div>
-                    {item.status && <StatusPill status={item.status} />}
-                  </div>
-                  <p className="mt-1 text-[14px] text-muted">{item.detail}</p>
-                  <p className="mt-1 text-[12px] text-muted/80">{formatTime(item.at)}</p>
-                  {item.hash && (
-                    <p className="mt-2 text-[12px] break-all text-ink/70">
-                      {explorer ? (
-                        <a href={explorer} className="text-gold" target="_blank" rel="noreferrer">
-                          {item.hash}
-                        </a>
-                      ) : (
-                        item.hash
-                      )}
-                    </p>
-                  )}
-                </div>
+        items.map((item) => {
+          const explorer = item.hash
+            ? item.network === 'polygon'
+              ? polygonExplorerUrl(item.hash)
+              : nimiqExplorerUrl(item.hash)
+            : null
+          return (
+            <div key={item.id} className="py-5 border-b border-line">
+              <div className="flex items-baseline justify-between gap-3">
+                <div className="text-[16px]">{item.title}</div>
+                {item.status && <StatusMark status={item.status} />}
               </div>
-            )
-          })}
-        </div>
+              {item.groupName && <div className="mt-1 text-[13px] text-muted">{item.groupName}</div>}
+              <p className="mt-1 text-[14px] text-muted">{item.detail}</p>
+              <p className="mt-1 text-[12px] text-muted">{formatTime(item.at)}</p>
+              {item.hash && (
+                <p className="mt-2 text-[12px] break-all">
+                  {explorer ? (
+                    <a href={explorer} className="text-gold" target="_blank" rel="noreferrer">
+                      {item.hash}
+                    </a>
+                  ) : (
+                    item.hash
+                  )}
+                </p>
+              )}
+            </div>
+          )
+        })
       )}
     </div>
   )

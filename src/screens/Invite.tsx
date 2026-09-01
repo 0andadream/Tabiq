@@ -1,6 +1,6 @@
 import { useEffect, useState } from 'react'
 import { useNavigate, useParams } from 'react-router-dom'
-import { BackButton, Banner, Button, ScreenHeader } from '../components/ui.tsx'
+import { BackButton, Button, Notice, ScreenHeader } from '../components/ui.tsx'
 import { fetchGroup } from '../lib/api.ts'
 import { copyText } from '../lib/format.ts'
 import { inviteUrl, makeQrDataUrl } from '../lib/qr.ts'
@@ -34,27 +34,23 @@ export function Invite() {
     <div className="screen">
       <ScreenHeader
         title="Invite"
-        subtitle={name ? `Share ${name}` : 'Share this group'}
+        subtitle={name || undefined}
         back={<BackButton onClick={() => nav(`/g/${id}`)} />}
       />
-      {error && (
-        <div className="mb-5">
-          <Banner tone="danger">{error}</Banner>
-        </div>
-      )}
-      <div className="rounded-[28px] bg-[#f7f3ea] text-[#16140d] p-6 grid place-items-center">
-        {qr ? <img src={qr} alt="Group invite QR code" className="w-[220px] h-[220px]" /> : <div className="w-[220px] h-[220px]" />}
+      {error && <Notice tone="danger">{error}</Notice>}
+      <div className="rounded-[20px] bg-[#f5f5f2] p-5 grid place-items-center">
+        {qr ? <img src={qr} alt="Group invite QR code" className="w-[200px] h-[200px]" /> : <div className="w-[200px] h-[200px]" />}
       </div>
-      <div className="mt-6 text-center">
-        <div className="text-[12px] uppercase tracking-[0.18em] text-muted">Group code</div>
-        <div className="mt-2 text-[32px] tracking-[0.28em] font-medium">{code || '••••••'}</div>
-      </div>
-      <p className="mt-4 text-center text-[14px] text-muted">Scan the QR or enter the code in Tabiq. Codes do not expire, but an invalid QR will be rejected.</p>
-      <Button className="w-full mt-8" onClick={() => void onCopy()}>
+      <div className="mt-8 text-[12px] text-muted">Group code</div>
+      <button
+        onClick={() => void onCopy()}
+        className="mt-2 font-mono text-[40px] tracking-[0.22em] leading-none text-ink"
+      >
+        {code || '••••••'}
+      </button>
+      <p className="mt-4 text-[13px] text-muted">Tap to copy.</p>
+      <Button className="w-full mt-10" onClick={() => void onCopy()}>
         {copied ? 'Copied' : 'Copy code'}
-      </Button>
-      <Button className="w-full mt-3" variant="secondary" onClick={() => nav(`/g/${id}`)}>
-        Done
       </Button>
     </div>
   )
