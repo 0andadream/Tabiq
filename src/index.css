@@ -1,0 +1,109 @@
+@import "tailwindcss";
+
+@theme {
+  --font-sans: "IBM Plex Sans", ui-sans-serif, system-ui, sans-serif;
+  --font-serif: "IBM Plex Serif", ui-serif, Georgia, serif;
+  --color-ink: #f4f1ea;
+  --color-muted: #9a958a;
+  --color-gold: #e2b13c;
+  --color-gold-dim: #b48c22;
+  --color-line: rgb(244 241 234 / 0.08);
+  --color-danger: #e85d4c;
+  --color-ok: #3ddc97;
+  --color-bg: #070708;
+  --color-elev: #111113;
+}
+
+:root {
+  color-scheme: dark;
+  --safe-bottom: env(safe-area-inset-bottom, 0px);
+}
+
+html,
+body,
+#root {
+  min-height: 100%;
+  background: #050505;
+}
+
+body {
+  margin: 0;
+  font-family: var(--font-sans);
+  color: var(--color-ink);
+  background: #050505;
+  -webkit-font-smoothing: antialiased;
+  text-rendering: optimizeLegibility;
+}
+
+button,
+input,
+select,
+textarea {
+  font: inherit;
+}
+
+button {
+  cursor: pointer;
+}
+
+* {
+  -webkit-tap-highlight-color: transparent;
+}
+
+.app-root {
+  min-height: 100dvh;
+  background: #050505;
+}
+
+.app-frame {
+  min-height: 100dvh;
+  background: #070708;
+}
+
+@media (min-width: 768px) {
+  .app-root {
+    display: flex;
+    justify-content: center;
+    padding: 28px 0;
+  }
+
+  .app-frame {
+    width: 430px;
+    min-height: calc(100dvh - 56px);
+    max-height: calc(100dvh - 56px);
+    border: 1px solid rgb(244 241 234 / 0.08);
+    border-radius: 28px;
+    overflow: hidden;
+    box-shadow: 0 24px 80px rgb(0 0 0 / 0.45);
+    position: relative;
+  }
+}
+
+.num {
+  font-family: var(--font-serif);
+  font-variant-numeric: tabular-nums;
+  letter-spacing: -0.04em;
+}
+
+.screen {
+  min-height: 100dvh;
+  padding: 20px 20px calc(28px + var(--safe-bottom));
+}
+
+@media (min-width: 768px) {
+  .screen {
+    min-height: 100%;
+  }
+}
+
+.hairline {
+  height: 1px;
+  background: rgb(244 241 234 / 0.08);
+}
+
+.status-dot {
+  width: 7px;
+  height: 7px;
+  border-radius: 999px;
+  display: inline-block;
+}

@@ -1,0 +1,49 @@
+{
+  "name": "tabiq",
+  "private": true,
+  "version": "1.0.0",
+  "type": "module",
+  "description": "Tabiq — split the bill, settle in NIM. A Nimiq Pay Mini App.",
+  "license": "MIT",
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/0andadream/Tabiq.git"
+  },
+  "bugs": {
+    "url": "https://github.com/0andadream/Tabiq/issues"
+  },
+  "homepage": "https://github.com/0andadream/Tabiq#readme",
+  "scripts": {
+    "dev": "concurrently -n web,api -c cyan,magenta \"vite\" \"wrangler dev --port 8787\"",
+    "dev:web": "vite",
+    "dev:api": "wrangler dev --port 8787",
+    "build": "tsc -b && vite build",
+    "preview": "vite preview --host",
+    "lint": "oxlint",
+    "deploy": "npm run build && wrangler deploy",
+    "db:migrate": "wrangler d1 migrations apply tabiq --local",
+    "db:migrate:remote": "wrangler d1 migrations apply tabiq --remote"
+  },
+  "dependencies": {
+    "@nimiq/mini-app-sdk": "^0.1.0",
+    "hono": "^4.13.5",
+    "qrcode": "^1.5.4",
+    "react": "^19.2.8",
+    "react-dom": "^19.2.8",
+    "react-router-dom": "^7.18.3"
+  },
+  "devDependencies": {
+    "@tailwindcss/vite": "^4.3.3",
+    "@types/node": "^24.13.3",
+    "@types/qrcode": "^1.5.6",
+    "@types/react": "^19.2.18",
+    "@types/react-dom": "^19.2.4",
+    "@vitejs/plugin-react": "^6.1.0",
+    "concurrently": "^9.2.4",
+    "oxlint": "^1.79.0",
+    "tailwindcss": "^4.3.3",
+    "typescript": "~6.0.2",
+    "vite": "^8.2.2",
+    "wrangler": "^4.86.0"
+  }
+}
